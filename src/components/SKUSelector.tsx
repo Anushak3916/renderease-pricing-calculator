@@ -43,6 +43,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
     title,
     description,
     unitPrice,
+    initialUnitPrice,
     included,
     additional
   }: {
@@ -50,6 +51,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
     title: string;
     description: string;
     unitPrice: number;
+    initialUnitPrice: number;
     included: number;
     additional: number;
   }) => (
@@ -103,7 +105,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
       </div>
       {additional > 0 && (
         <div className="mt-2 text-right text-orange-700 font-bold text-base">
-          Total: {`${pricing.symbols[currency]}${Math.round(unitPrice * additional).toLocaleString()}`} (one-time)
+          Total: {`${pricing.symbols[currency]}${Math.round(initialUnitPrice * additional).toLocaleString()}`} (one-time)
         </div>
       )}
     </div>
@@ -122,6 +124,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           title="Basic SKUs"
           description="Simple products with basic configurations"
           unitPrice={500}
+          initialUnitPrice={pricing.unit3d.basic}
           included={Math.min(skuCounts.basic, planLimits[selectedPlan].basic)}
           additional={additionalCounts.additionalBasic}
         />
@@ -131,6 +134,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           title="Medium SKUs"
           description="Products with moderate complexity"
           unitPrice={500}
+          initialUnitPrice={pricing.unit3d.medium}
           included={Math.min(skuCounts.medium, planLimits[selectedPlan].medium)}
           additional={additionalCounts.additionalMedium}
         />
@@ -141,6 +145,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
             title="Complex SKUs"
             description="Highly detailed products with advanced features"
             unitPrice={500}
+            initialUnitPrice={pricing.unit3d.complex}
             included={Math.min(skuCounts.complex, planLimits[selectedPlan].complex)}
             additional={additionalCounts.additionalComplex}
           />
