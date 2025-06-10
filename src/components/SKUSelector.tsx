@@ -35,16 +35,16 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
   };
 
   const formatPrice = (price: number) => {
-    return `${pricing.symbols[currency]}${Math.round(billingPeriod === 'annual' ? price * 4 : price).toLocaleString()} per SKU`;
+    return `${pricing.symbols[currency]}${Math.round(price * pricing.rates[currency]).toLocaleString()}`;
   };
 
-  const SKUControl = ({ 
-    type, 
-    title, 
-    description, 
-    unitPrice, 
-    included, 
-    additional 
+  const SKUControl = ({
+    type,
+    title,
+    description,
+    unitPrice,
+    included,
+    additional
   }: {
     type: keyof SKUCounts;
     title: string;
@@ -63,7 +63,9 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
             {title}
           </h5>
           <p className="text-sm text-gray-600 mb-2">{description}</p>
-          <p className="text-base font-bold text-purple-600">{formatPrice(unitPrice)}</p>
+          <p className="text-base font-bold text-purple-600">
+            {formatPrice(unitPrice)} per SKU (maintenance)
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -101,7 +103,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
       </div>
       {additional > 0 && (
         <div className="mt-2 text-right text-orange-700 font-bold text-base">
-          Total: {`${pricing.symbols[currency]}${(unitPrice * additional).toLocaleString()}`} (one-time)
+          Total: {`${pricing.symbols[currency]}${Math.round(unitPrice * additional).toLocaleString()}`} (one-time)
         </div>
       )}
     </div>
@@ -119,7 +121,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           type="basic"
           title="Basic SKUs"
           description="Simple products with basic configurations"
-          unitPrice={pricing.unit3d.basic}
+          unitPrice={500}
           included={Math.min(skuCounts.basic, planLimits[selectedPlan].basic)}
           additional={additionalCounts.additionalBasic}
         />
@@ -128,7 +130,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           type="medium"
           title="Medium SKUs"
           description="Products with moderate complexity"
-          unitPrice={pricing.unit3d.medium}
+          unitPrice={500}
           included={Math.min(skuCounts.medium, planLimits[selectedPlan].medium)}
           additional={additionalCounts.additionalMedium}
         />
@@ -138,7 +140,7 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
             type="complex"
             title="Complex SKUs"
             description="Highly detailed products with advanced features"
-            unitPrice={pricing.unit3d.complex}
+            unitPrice={500}
             included={Math.min(skuCounts.complex, planLimits[selectedPlan].complex)}
             additional={additionalCounts.additionalComplex}
           />

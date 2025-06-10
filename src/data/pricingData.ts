@@ -17,7 +17,7 @@ export const pricingData: PricingData = {
     monthly: { 
       starter: 11999, 
       pro: 29999, 
-      starterPlatform: 7999,
+      starterPlatform: 0,
       proPlatform: 14999
     },
     payg: { 
