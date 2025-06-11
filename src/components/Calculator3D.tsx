@@ -328,48 +328,20 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
           </div>
 
           {/* First Year Total / First Month Total */}
-          <div className="bg-purple-50 rounded-xl p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
-              <h4 className="text-2xl font-bold text-purple-900">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8 text-center transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <TrendingUp className="h-6 w-6 text-white" />
+              <h4 className="text-2xl font-bold mb-2">
                 {billingPeriod === 'annual' ? 'First Year Total' : 'First Month Total'}
               </h4>
             </div>
 
-            <div className="space-y-3">
-              {billingPeriod === 'monthly' && selectedPlan !== 'enterprise' && (
-                <div className="flex justify-between items-center pb-2 border-b border-purple-200">
-                  <span className="text-gray-700">Plan Price:</span>
-                  <span className="font-semibold text-gray-900">
-                    {formatPrice(selectedPlan === 'starter' ? pricing.base3d.monthly.starter : pricing.base3d.monthly.pro)}
-                  </span>
-                </div>
-              )}
-
-              {costs.additionalSKUTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Additional SKUs:</span>
-                  <span className="font-semibold text-gray-900">{formatPrice(costs.additionalSKUTotal)}</span>
-                </div>
-              )}
-              
-              {costs.addOnsTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Add-ons:</span>
-                  <span className="font-semibold text-gray-900">{formatPrice(costs.addOnsTotal)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-4 border-t-2 border-purple-300">
-                <span className="text-xl font-bold text-purple-900">Total:</span>
-                <span className="text-xl font-bold text-purple-900">
-                  {formatPrice(costs.firstPeriodTotal)}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">
-                * Includes one-time setup fees for additional SKUs and add-ons.
-              </p>
-            </div>
+            <p className="text-5xl font-extrabold transition-opacity duration-500 ease-in-out opacity-100 mb-2">
+              {formatPrice(costs.firstPeriodTotal)}
+            </p>
+            <p className="text-blue-100 mt-2 text-lg">
+              * Includes one-time setup fees for additional SKUs and add-ons.
+            </p>
           </div>
 
           {/* Ongoing Annual Maintenance / Monthly Maintenance */}

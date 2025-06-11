@@ -35,7 +35,9 @@ const PricingPage: React.FC = () => {
             <button
               onClick={() => setBillingPeriod('monthly')}
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                billingPeriod === 'monthly'
+                activeTab === 'vp'
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : billingPeriod === 'monthly'
                   ? 'bg-purple-600 text-white shadow-lg'
                   : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
               }`}
@@ -46,7 +48,9 @@ const PricingPage: React.FC = () => {
             <button
               onClick={() => setBillingPeriod('annual')}
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                billingPeriod === 'annual'
+                activeTab === 'vp'
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : billingPeriod === 'annual'
                   ? 'bg-purple-600 text-white shadow-lg'
                   : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
               } ml-2`}
