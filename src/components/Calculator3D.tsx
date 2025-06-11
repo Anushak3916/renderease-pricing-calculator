@@ -11,7 +11,7 @@ interface Calculator3DProps {
 }
 
 const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pricing }) => {
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro'>('starter');
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'enterprise'>('starter');
   const [skuCounts, setSKUCounts] = useState<SKUCounts>({
     basic: 2,
     medium: 2,
@@ -26,7 +26,8 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
   // Set plan limits to match included SKUs for each plan
   const planLimits: Record<string, SKUCounts> = {
     starter: { basic: 2, medium: 2, complex: 0 },
-    pro: { basic: 3, medium: 3, complex: 2 }
+    pro: { basic: 3, medium: 3, complex: 2 },
+    enterprise: { basic: 0, medium: 0, complex: 0 }
   };
 
   // Set default SKU counts to match plan's included SKUs
@@ -41,9 +42,9 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
 
   const calculateCosts = () => {
     // Included SKUs per plan
-    const includedBasic = selectedPlan === 'starter' ? 2 : 3;
-    const includedMedium = selectedPlan === 'starter' ? 2 : 3;
-    const includedComplex = selectedPlan === 'starter' ? 0 : 2;
+    const includedBasic = selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 3 : 0;
+    const includedMedium = selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 3 : 0;
+    const includedComplex = selectedPlan === 'pro' ? 2 : 0;
 
     // Additional SKUs
     const additionalBasic = Math.max(0, skuCounts.basic - includedBasic);
@@ -62,7 +63,9 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
     const maintenanceComplex = skuCounts.complex * 500;
     const maintenanceFee = maintenanceBasic + maintenanceMedium + maintenanceComplex;
 
-    let planPrice = pricing.base3d.monthly[selectedPlan];
+    let planPrice = (selectedPlan === 'starter' || selectedPlan === 'pro' || selectedPlan === 'enterprise')
+    ? pricing.base3d.monthly[selectedPlan]
+    : 0;
 
     // Calculate add-ons total
     const addOnsTotal = (addOns.exploded * pricing.unit3d.exploded) + (addOns.animation * pricing.unit3d.animation) + (addOns.texturing * pricing.unit3d.ar);
@@ -70,33 +73,23 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
     let firstPeriodTotal;
     let ongoingPeriodTotal;
 
-    if (selectedPlan === 'starter') {
-        // Starter plan logic: 11,999 covers default SKUs for first month
-        firstPeriodTotal = pricing.base3d.monthly.starter + additionalSKUTotal + addOnsTotal;
-        ongoingPeriodTotal = maintenanceFee;
-
-        if (billingPeriod === 'annual') {
-            firstPeriodTotal = (firstPeriodTotal * 12 * 0.85) / 12;
-            ongoingPeriodTotal = maintenanceFee * 12;
+    if (billingPeriod === 'monthly') {
+        if (selectedPlan === 'starter') {
+            // Starter plan logic: 11,999 covers default SKUs for first month
+            firstPeriodTotal = pricing.base3d.monthly.starter + additionalSKUTotal + addOnsTotal;
+        } else if (selectedPlan === 'pro') { // Pro plan logic
+            firstPeriodTotal = planPrice + additionalSKUTotal + addOnsTotal;
+        } else { // Enterprise plan logic
+            firstPeriodTotal = additionalSKUTotal + addOnsTotal; // No plan price for enterprise
         }
-    } else { // Pro plan logic
-        firstPeriodTotal = planPrice + additionalSKUTotal + addOnsTotal;
         ongoingPeriodTotal = maintenanceFee;
-
-        if (billingPeriod === 'annual') {
-            firstPeriodTotal = (firstPeriodTotal * 12 * 0.85) / 12;
-            ongoingPeriodTotal = maintenanceFee * 12;
-        }
-    }
-
-    // `displayPlanPrice` for the main plan card (before adding additional SKUs/add-ons)
-    let displayPlanPrice = pricing.base3d.monthly[selectedPlan];
-    if (billingPeriod === 'annual') {
-      displayPlanPrice = Math.round(displayPlanPrice * 12 * 0.85); // Apply annual discount
+    } else { // annual billing
+        // For annual, the "first period total" should represent the total cost for the first year (plan + additional SKUs + add-ons)
+        firstPeriodTotal = (selectedPlan === 'starter' ? 10999 : selectedPlan === 'pro' ? 25499 : 0) + additionalSKUTotal + addOnsTotal;
+        ongoingPeriodTotal = maintenanceFee * 12; // This is total annual maintenance
     }
 
     return {
-      planPrice: displayPlanPrice,
       additionalBasicCost,
       additionalMediumCost,
       additionalComplexCost,
@@ -111,7 +104,9 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
       includedComplex,
       additionalBasic,
       additionalMedium,
-      additionalComplex
+      additionalComplex,
+      additionalSKUTotal,
+      addOnsTotal
     };
   };
 
@@ -128,7 +123,7 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
         <p className="text-lg text-gray-600">Select a plan and adjust your SKUs to see dynamic pricing</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-8 items-stretch">
         {/* Left Column - Plan Selection & SKU Configuration */}
         <div className="space-y-6">
           {/* Plan Selection */}
@@ -146,15 +141,14 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
                 <h5 className="font-semibold">Starter</h5>
                 <p className="text-2xl font-bold">
                   {formatPrice(billingPeriod === 'annual' 
-                    ? Math.round(pricing.base3d.monthly.starter * 12 * 0.85)
+                    ? 10999
                     : pricing.base3d.monthly.starter
                   )}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Setup + {formatPrice(billingPeriod === 'annual' 
-                    ? Math.round((2 * 500 + 2 * 500) * 12 * 0.85 / 12)
-                    : (2 * 500 + 2 * 500)
-                  )} per month
+                  {billingPeriod === 'annual' 
+                    ? `Setup + ₹2,000`
+                    : `Setup + ${formatPrice(2 * 500 + 2 * 500)}`}
                 </p>
               </button>
               <button
@@ -168,15 +162,30 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
                 <h5 className="font-semibold">Pro</h5>
                 <p className="text-2xl font-bold">
                   {formatPrice(billingPeriod === 'annual' 
-                    ? Math.round(pricing.base3d.monthly.pro * 12 * 0.85)
+                    ? 25499
                     : pricing.base3d.monthly.pro
                   )}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Setup + {formatPrice(billingPeriod === 'annual' 
-                    ? Math.round(pricing.base3d.monthly.proPlatform * 12 * 0.85 / 12)
-                    : pricing.base3d.monthly.proPlatform
-                  )} per month
+                  {billingPeriod === 'annual' 
+                    ? `Setup + ₹2,000`
+                    : `Setup + ${formatPrice(pricing.base3d.monthly.proPlatform)}`}
+                </p>
+              </button>
+              <button
+                onClick={() => setSelectedPlan('enterprise')}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                  selectedPlan === 'enterprise'
+                    ? 'border-purple-500 bg-purple-50 text-purple-900'
+                    : 'border-gray-200 bg-white hover:border-purple-200'
+                }`}
+              >
+                <h5 className="font-semibold">Enterprise</h5>
+                <p className="text-2xl font-bold">
+                  {formatPrice(0)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Fully customizable based on your needs
                 </p>
               </button>
             </div>
@@ -213,7 +222,7 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
           {/* SKU Usage Summary */}
           <div className="bg-blue-50 rounded-xl p-6 mb-6">
             <h4 className="text-xl font-semibold mb-4 text-blue-900">SKU Usage Summary</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
               <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
                 <h5 className="font-bold text-xl text-blue-800 mb-3 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-cube text-blue-500"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.26 7.06 12 12 20.74 7.06"></polyline><line x1="12" x2="12" y1="22" y2="12"></line></svg> Basic SKUs</h5>
                 <div className="space-y-2 text-gray-700">
@@ -225,10 +234,12 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
                     <span className="text-sm">Current Usage:</span>
                     <span className="font-semibold">{skuCounts.basic}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Included:</span>
-                    <span className="font-bold text-green-700">{Math.min(skuCounts.basic, planLimits[selectedPlan].basic)}</span>
-                  </div>
+                  {selectedPlan !== 'enterprise' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-green-700">Included:</span>
+                      <span className="font-bold text-green-700">{Math.min(skuCounts.basic, planLimits[selectedPlan].basic)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-amber-700">Additional:</span>
                     <span className="font-bold text-amber-700">{costs.additionalBasic}</span>
@@ -257,10 +268,12 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
                     <span className="text-sm">Current Usage:</span>
                     <span className="font-semibold">{skuCounts.medium}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-700">Included:</span>
-                    <span className="font-bold text-green-700">{Math.min(skuCounts.medium, planLimits[selectedPlan].medium)}</span>
-                  </div>
+                  {selectedPlan !== 'enterprise' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-green-700">Included:</span>
+                      <span className="font-bold text-green-700">{Math.min(skuCounts.medium, planLimits[selectedPlan].medium)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-amber-700">Additional:</span>
                     <span className="font-bold text-amber-700">{costs.additionalMedium}</span>
@@ -278,110 +291,151 @@ const Calculator3D: React.FC<Calculator3DProps> = ({ billingPeriod, currency, pr
                 </div>
               </div>
               
-              {selectedPlan === 'pro' && (
-                <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-                  <h5 className="font-bold text-xl text-green-800 mb-3 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-boxes text-green-500"><path d="M2.4 7.4a2 2 0 0 1 0-2.8L7.6 0.8A2 2 0 0 1 10.4 0h6.8a2 2 0 0 1 1.8 1l2.6 4.4a2 2 0 0 1 0 2.8L16.4 13.2a2 2 0 0 1-1.8 1h-6.8a2 2 0 0 1-1.8-1Z"></path><path d="M2.4 16.4a2 2 0 0 1 0-2.8l5.2-4.4a2 2 0 0 1 2.8 0l6.8 3.8a2 2 0 0 1 1.8 1l2.6 4.4a2 2 0 0 1 0 2.8l-5.2 4.4a2 2 0 0 1-2.8 0h-6.8a2 2 0 0 1-1.8-1Z"></path></svg> Complex SKUs</h5>
-                  <div className="space-y-2 text-gray-700">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Plan Limit:</span>
-                      <span className="font-semibold">{planLimits[selectedPlan].complex}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Current Usage:</span>
-                      <span className="font-semibold">{skuCounts.complex}</span>
-                    </div>
+              <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+                <h5 className="font-bold text-xl text-green-800 mb-3 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-boxes text-green-500"><path d="M2.4 12L12 2l9.6 10L12 22 2.4 12z"></path><path d="M22 12 12 2 2 12"></path><path d="M12 22 2 12 22 12"></path></svg> Complex SKUs</h5>
+                <div className="space-y-2 text-gray-700">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Plan Limit:</span>
+                    <span className="font-semibold">{planLimits[selectedPlan].complex}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Current Usage:</span>
+                    <span className="font-semibold">{skuCounts.complex}</span>
+                  </div>
+                  {selectedPlan !== 'enterprise' && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-green-700">Included:</span>
                       <span className="font-bold text-green-700">{Math.min(skuCounts.complex, planLimits[selectedPlan].complex)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-amber-700">Additional:</span>
-                      <span className="font-bold text-amber-700">{costs.additionalComplex}</span>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-amber-700">Additional:</span>
+                    <span className="font-bold text-amber-700">{costs.additionalComplex}</span>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-base font-medium text-green-600">
+                      {formatPrice(pricing.unit3d.complex)} per additional SKU
                     </div>
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="text-base font-medium text-green-600">
-                        {formatPrice(pricing.unit3d.complex)} per additional SKU
+                    {costs.additionalComplex > 0 && (
+                      <div className="text-sm text-amber-700 mt-1">
+                        Total: {formatPrice(costs.additionalComplexCost)} (one-time)
                       </div>
-                      {costs.additionalComplex > 0 && (
-                        <div className="text-sm text-amber-700 mt-1">
-                          Total: {formatPrice(costs.additionalComplexCost)} (one-time)
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {/* Usage Summary Footer */}
-            <div className="mt-6 pt-6 border-t-2 border-blue-200">
-              <div className="flex justify-between items-center text-lg font-bold text-blue-900 mb-2">
-                <span className="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-tag text-blue-500"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"></path><path d="M7 7h.01"></path></svg>Total SKUs in Use:</span>
-                <span>{skuCounts.basic + skuCounts.medium + skuCounts.complex}</span>
-              </div>
-              <div className="flex justify-between items-center text-lg font-bold text-amber-700">
-                <span className="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-plus-circle text-amber-500"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Total Additional SKUs:</span>
-                <span>
-                  {costs.additionalBasic + costs.additionalMedium + costs.additionalComplex}
-                </span>
               </div>
             </div>
           </div>
 
-          {/* Cost Breakdown */}
-          <div className="mt-8">
-            {/* First Month/Year Total */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8 text-center mb-8">
-              <h5 className="text-2xl font-bold mb-2">First Month Total</h5>
-              <p className="text-5xl font-extrabold">
-                {formatPrice(costs.firstPeriodTotal)}
-              </p>
-              <p className="text-blue-100 mt-2 text-lg">
-                {selectedPlan === 'starter' ? 'Everything included for first month. Add-ons/SKUs extra.' : 'Dynamic total for Pro plan'}
-              </p>
-            </div>
-            {/* Ongoing Period Breakdown */}
-            <div className="bg-blue-50 rounded-xl p-6">
-              <h4 className="text-xl font-semibold mb-4 text-blue-900">
-                {billingPeriod === 'annual' ? 'Total Annual Maintenance (from 2nd Year)' : 'Ongoing Cost Breakdown (from 2nd Month)'}
+          {/* First Year Total / First Month Total */}
+          <div className="bg-purple-50 rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-6 w-6 text-purple-600" />
+              <h4 className="text-2xl font-bold text-purple-900">
+                {billingPeriod === 'annual' ? 'First Year Total' : 'First Month Total'}
               </h4>
-              <div className="space-y-3 text-gray-700">
-                {billingPeriod === 'monthly' ? (
-                  <>
-                    {skuCounts.basic > 0 && (
-                      <div className="flex justify-between">
-                        <span>Basic SKUs Maintenance ({skuCounts.basic} × ₹500)</span>
-                        <span className="font-semibold">{formatPrice(costs.maintenanceBasic)}</span>
-                      </div>
-                    )}
-                    {skuCounts.medium > 0 && (
-                      <div className="flex justify-between">
-                        <span>Medium SKUs Maintenance ({skuCounts.medium} × ₹500)</span>
-                        <span className="font-semibold">{formatPrice(costs.maintenanceMedium)}</span>
-                      </div>
-                    )}
-                    {skuCounts.complex > 0 && (
-                      <div className="flex justify-between">
-                        <span>Complex SKUs Maintenance ({skuCounts.complex} × ₹500)</span>
-                        <span className="font-semibold">{formatPrice(costs.maintenanceComplex)}</span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Total Annual Maintenance</span>
-                    <span className="font-semibold">{formatPrice(costs.ongoingPeriodTotal)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-4 mt-4 border-t-2 border-gray-200">
-                  <span className="text-xl font-bold text-gray-900">Total Price</span>
-                  <span className="text-xl font-bold text-gray-900">
-                    {formatPrice(costs.ongoingPeriodTotal)}
+            </div>
+
+            <div className="space-y-3">
+              {billingPeriod === 'monthly' && selectedPlan !== 'enterprise' && (
+                <div className="flex justify-between items-center pb-2 border-b border-purple-200">
+                  <span className="text-gray-700">Plan Price:</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(selectedPlan === 'starter' ? pricing.base3d.monthly.starter : pricing.base3d.monthly.pro)}
                   </span>
                 </div>
+              )}
+
+              {costs.additionalSKUTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Additional SKUs:</span>
+                  <span className="font-semibold text-gray-900">{formatPrice(costs.additionalSKUTotal)}</span>
+                </div>
+              )}
+              
+              {costs.addOnsTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Add-ons:</span>
+                  <span className="font-semibold text-gray-900">{formatPrice(costs.addOnsTotal)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-4 border-t-2 border-purple-300">
+                <span className="text-xl font-bold text-purple-900">Total:</span>
+                <span className="text-xl font-bold text-purple-900">
+                  {formatPrice(costs.firstPeriodTotal)}
+                </span>
               </div>
-              <p className="text-sm text-gray-600 mt-4">
-                * Ongoing cost from 2nd {billingPeriod === 'annual' ? 'year' : 'month'} onwards (maintenance only)
+              <p className="text-sm text-gray-500 mt-2">
+                * Includes one-time setup fees for additional SKUs and add-ons.
+              </p>
+            </div>
+          </div>
+
+          {/* Ongoing Annual Maintenance / Monthly Maintenance */}
+          <div className="bg-purple-50 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Calculator className="h-6 w-6 text-purple-600" />
+              <h4 className="text-2xl font-bold text-purple-900">
+                {billingPeriod === 'annual' ? 'Ongoing Annual Maintenance (from 2nd Year)' : 'Ongoing Monthly Maintenance'}
+              </h4>
+            </div>
+
+            <div className="space-y-3">
+              {costs.maintenanceBasic > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">
+                    Basic SKUs Maintenance ({skuCounts.basic} × {formatPrice(500)}
+                    {billingPeriod === 'monthly' ? '' : '/month'})
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(costs.maintenanceBasic * (billingPeriod === 'annual' ? 12 : 1))}
+                    {billingPeriod === 'monthly' ? '' : ' per year'}
+                  </span>
+                </div>
+              )}
+              {costs.maintenanceMedium > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">
+                    Medium SKUs Maintenance ({skuCounts.medium} × {formatPrice(500)}
+                    {billingPeriod === 'monthly' ? '' : '/month'})
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(costs.maintenanceMedium * (billingPeriod === 'annual' ? 12 : 1))}
+                    {billingPeriod === 'monthly' ? '' : ' per year'}
+                  </span>
+                </div>
+              )}
+              {costs.maintenanceComplex > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">
+                    Complex SKUs Maintenance ({skuCounts.complex} × {formatPrice(500)}
+                    {billingPeriod === 'monthly' ? '' : '/month'})
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(costs.maintenanceComplex * (billingPeriod === 'annual' ? 12 : 1))}
+                    {billingPeriod === 'monthly' ? '' : ' per year'}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-4 border-t border-purple-200">
+                <span className="text-lg font-bold text-purple-900">
+                  Total {billingPeriod === 'annual' ? 'Annual' : 'Monthly'} Maintenance
+                </span>
+                <span className="text-lg font-bold text-purple-900">
+                  {formatPrice(costs.maintenanceFee * (billingPeriod === 'annual' ? 12 : 1))}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center pt-4 border-t-2 border-purple-300">
+                <span className="text-xl font-bold text-purple-900">Total Price</span>
+                <span className="text-xl font-bold text-purple-900">
+                  {formatPrice(costs.ongoingPeriodTotal)}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                * Ongoing cost from {billingPeriod === 'annual' ? '2nd year' : '2nd month'} onwards (maintenance only)
               </p>
             </div>
           </div>

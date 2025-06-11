@@ -14,12 +14,14 @@ export interface PricingData {
     monthly: {
       starter: number;
       pro: number;
+      enterprise: number;
       starterPlatform: number;
       proPlatform: number;
     };
     payg: {
       starter: number;
       pro: number;
+      enterprise: number;
       starterPlatform: number;
       proPlatform: number;
     };
@@ -31,5 +33,10 @@ export interface PricingData {
     exploded: number;
     animation: number;
     ar: number;
+  };
+  unitVP: {
+    siloShots: number;
+    lifestyleScenes: number;
+    productVideos: number;
   };
 }

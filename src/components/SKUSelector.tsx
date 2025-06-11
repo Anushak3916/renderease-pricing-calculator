@@ -3,7 +3,7 @@ import { Package, Plus, Minus, Box, Package2 } from 'lucide-react';
 import { SKUCounts, PricingData, Currency } from '../types/pricing';
 
 interface SKUSelectorProps {
-  selectedPlan: 'starter' | 'pro';
+  selectedPlan: 'starter' | 'pro' | 'enterprise';
   skuCounts: SKUCounts;
   setSKUCounts: (counts: SKUCounts) => void;
   planLimits: Record<string, SKUCounts>;
@@ -67,6 +67,9 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           <p className="text-sm text-gray-600 mb-2">{description}</p>
           <p className="text-base font-bold text-purple-600">
             {formatPrice(unitPrice)} per SKU (maintenance)
+          </p>
+          <p className="text-base font-bold text-blue-600 mt-1">
+            Unit Cost: {formatPrice(initialUnitPrice)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -139,17 +142,15 @@ const SKUSelector: React.FC<SKUSelectorProps> = ({
           additional={additionalCounts.additionalMedium}
         />
         
-        {selectedPlan === 'pro' && (
-          <SKUControl
-            type="complex"
-            title="Complex SKUs"
-            description="Highly detailed products with advanced features"
-            unitPrice={500}
-            initialUnitPrice={pricing.unit3d.complex}
-            included={Math.min(skuCounts.complex, planLimits[selectedPlan].complex)}
-            additional={additionalCounts.additionalComplex}
-          />
-        )}
+        <SKUControl
+          type="complex"
+          title="Complex SKUs"
+          description="Highly detailed products with advanced features"
+          unitPrice={500}
+          initialUnitPrice={pricing.unit3d.complex}
+          included={Math.min(skuCounts.complex, planLimits[selectedPlan].complex)}
+          additional={additionalCounts.additionalComplex}
+        />
       </div>
     </div>
   );

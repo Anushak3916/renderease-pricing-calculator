@@ -20,10 +20,10 @@ const PlansVP: React.FC<PlansVPProps> = ({ currency, pricing, billingPeriod }) =
       const discounted = annual * 0.85;
       return {
         display: <><span className="line-through text-gray-400 mr-2">{formatPrice(annual / 12)}</span><span className="text-purple-600 font-bold">{formatPrice(discounted / 12)}</span></>,
-        period: '/ mo per SKU',
+        period: '/ SKU',
       };
     }
-    return { display: formatPrice(base), period: '/ mo per SKU' };
+    return { display: formatPrice(base), period: '/ SKU' };
   };
 
   const starterFeatures = [

@@ -39,6 +39,7 @@ const PricingPage: React.FC = () => {
                   ? 'bg-purple-600 text-white shadow-lg'
                   : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
               }`}
+              disabled={activeTab === 'vp'}
             >
               Monthly Billing
             </button>
@@ -49,6 +50,7 @@ const PricingPage: React.FC = () => {
                   ? 'bg-purple-600 text-white shadow-lg'
                   : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
               } ml-2`}
+              disabled={activeTab === 'vp'}
             >
               Annual Billing
               <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full ml-2">Save 15%</span>
@@ -84,7 +86,7 @@ const PricingPage: React.FC = () => {
         {activeTab === 'vp' && (
           <>
             <PlansVP currency={currency} pricing={pricing} billingPeriod={billingPeriod} />
-            <CalculatorVP currency={currency} pricing={pricing} billingPeriod={billingPeriod} />
+            <CalculatorVP currency={currency} pricing={pricing} />
           </>
         )}
       </div>

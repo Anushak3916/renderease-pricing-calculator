@@ -5,7 +5,6 @@ import { Currency, PricingData, BillingPeriod } from '../types/pricing';
 interface CalculatorVPProps {
   currency: Currency;
   pricing: PricingData;
-  billingPeriod: BillingPeriod;
 }
 
 const PLAN_DEFAULTS = {
@@ -25,23 +24,36 @@ const PLAN_DEFAULTS = {
     retouching: 'advanced',
     delivery: 'express',
   },
+  enterprise: {
+    siloShots: 0,
+    lifestyleScenes: 0,
+    artisticRenders: 0,
+    resolution: '1080',
+    retouching: 'none',
+    delivery: 'standard',
+  }
 };
 
 const PLAN_DETAILS = {
   starter: {
     name: 'Starter',
-    description: 'Best for small projects and quick turnarounds.',
+    description: 'Includes default setup for common photography needs.',
     icon: <ImageLucide className="h-6 w-6 text-blue-600" />,
   },
   pro: {
     name: 'Pro',
-    description: 'For larger projects and advanced needs.',
+    description: 'Advanced setup for complex projects and higher volumes.',
     icon: <Layers className="h-6 w-6 text-purple-600" />,
+  },
+  enterprise: {
+    name: 'Enterprise',
+    description: 'Fully customizable, tailored to your unique requirements.',
+    icon: <Layers className="h-6 w-6 text-green-600" />,
   },
 };
 
-const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingPeriod }) => {
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro'>('starter');
+const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing }) => {
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'enterprise'>('starter');
   const [vpConfig, setVPConfig] = useState(PLAN_DEFAULTS['starter']);
 
   // When plan changes, update config to defaults
@@ -58,17 +70,16 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
     delivery: { 'standard': 0, 'express': 500, 'priority': 1000 }
   };
 
-  const calculateVPTotal = (period: 'monthly' | 'annual' = 'monthly') => {
+  const calculateVPTotal = () => {
     let total = 0;
-    total += vpConfig.siloShots * vpPricing.siloShot;
-    total += vpConfig.lifestyleScenes * vpPricing.lifestyleScene;
-    total += vpConfig.artisticRenders * vpPricing.artisticRender;
+
+    total += vpConfig.siloShots * pricing.unitVP.siloShots;
+    total += vpConfig.lifestyleScenes * pricing.unitVP.lifestyleScenes;
+    total += vpConfig.artisticRenders * pricing.unitVP.productVideos;
     total += vpPricing.resolutionUpgrade[vpConfig.resolution as keyof typeof vpPricing.resolutionUpgrade];
     total += vpPricing.retouching[vpConfig.retouching as keyof typeof vpPricing.retouching];
     total += vpPricing.delivery[vpConfig.delivery as keyof typeof vpPricing.delivery];
-    if (period === 'annual') {
-      total = (total * 12 * 0.85) / 12; // 15% discount for annual, displayed monthly
-    }
+
     return total;
   };
 
@@ -81,7 +92,9 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
     min = 0, 
     max = 50, 
     unitPrice,
-    description 
+    description,
+    unitSuffix,
+    step
   }: {
     label: React.ReactNode;
     value: number;
@@ -90,6 +103,8 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
     max?: number;
     unitPrice: number;
     description?: string;
+    unitSuffix?: string;
+    step?: number;
   }) => (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
@@ -97,7 +112,7 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
           <span className="font-medium">{label}</span>
           {description && <p className="text-sm text-gray-600">{description}</p>}
         </div>
-        <span className="text-blue-600 font-semibold">{formatPrice(unitPrice)} each</span>
+        <span className="text-blue-600 font-semibold">{formatPrice(unitPrice)}{unitSuffix ? ` ${unitSuffix}` : ''}</span>
       </div>
       <div className="space-y-2">
         <input
@@ -107,6 +122,7 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
           className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+          step={step}
         />
         <div className="flex justify-between text-sm">
           <span>{min}</span>
@@ -121,7 +137,7 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
     <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8">
       {/* Plan Selection as Cards */}
       <div className="flex flex-col md:flex-row justify-center gap-4 mb-8">
-        {(['starter', 'pro'] as const).map((plan) => (
+        {(['starter', 'pro', 'enterprise'] as const).map((plan) => (
           <button
             key={plan}
             className={`flex-1 flex flex-col items-center p-6 rounded-xl border-2 transition-all duration-300 shadow-sm cursor-pointer focus:outline-none ${selectedPlan === plan ? 'border-blue-600 bg-blue-50 scale-105 shadow-xl' : 'border-gray-200 bg-white hover:border-blue-400 hover:scale-105 hover:shadow-lg'}`}
@@ -145,28 +161,34 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
             <div className="space-y-6">
               <SliderControl
                 label={<span className="flex items-center gap-2"><ImageLucide className="h-4 w-4 text-blue-500" />Silo Shots</span>}
-                description="5 silo shots = ₹300/-"
+                description="1 silo shot = ₹100/-"
                 value={vpConfig.siloShots}
                 onChange={(value) => setVPConfig({...vpConfig, siloShots: value})}
-                min={1}
-                max={20}
-                unitPrice={vpPricing.siloShot}
+                min={selectedPlan === 'starter' ? 5 : selectedPlan === 'pro' ? 8 : 0}
+                max={100}
+                unitPrice={pricing.unitVP.siloShots}
+                unitSuffix="per shot"
               />
               <SliderControl
                 label={<span className="flex items-center gap-2"><Camera className="h-4 w-4 text-purple-500" />Lifestyle Scenes</span>}
-                description="2 lifestyle scenes = ₹500/-"
+                description="1 lifestyle scene = ₹250/-"
                 value={vpConfig.lifestyleScenes}
                 onChange={(value) => setVPConfig({...vpConfig, lifestyleScenes: value})}
-                min={1}
-                max={10}
-                unitPrice={vpPricing.lifestyleScene}
+                min={selectedPlan === 'starter' ? 2 : selectedPlan === 'pro' ? 4 : 0}
+                max={100}
+                unitPrice={pricing.unitVP.lifestyleScenes}
+                unitSuffix="per scene"
               />
               <SliderControl
                 label={<span className="flex items-center gap-2"><Brush className="h-4 w-4 text-pink-500" />3D Artistic Renders</span>}
                 description="2 for ₹3,500/-"
                 value={vpConfig.artisticRenders}
                 onChange={(value) => setVPConfig({...vpConfig, artisticRenders: value})}
-                unitPrice={vpPricing.artisticRender}
+                min={0}
+                max={100}
+                unitPrice={pricing.unitVP.productVideos}
+                unitSuffix="per render"
+                step={2}
               />
             </div>
           </div>
@@ -220,10 +242,10 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8 text-center transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
             <h4 className="text-2xl font-bold mb-2">Estimated Total</h4>
             <p className="text-5xl font-extrabold transition-opacity duration-500 ease-in-out opacity-100">
-              {formatPrice(calculateVPTotal(billingPeriod === 'payg' ? 'monthly' : billingPeriod))}
+              {formatPrice(calculateVPTotal())}
             </p>
             <p className="text-blue-100 mt-2 text-lg">
-              Your estimated monthly cost for Virtual Photography
+              Your estimated total cost for Virtual Photography
             </p>
           </div>
 
@@ -231,40 +253,42 @@ const CalculatorVP: React.FC<CalculatorVPProps> = ({ currency, pricing, billingP
             <h4 className="text-xl font-semibold mb-4">Pricing Details</h4>
             <div className="space-y-3 text-gray-700">
               <div className="flex justify-between">
-                <span>Silo Shots ({vpConfig.siloShots} × {formatPrice(vpPricing.siloShot)})</span>
-                <span className="font-semibold">{formatPrice(vpConfig.siloShots * vpPricing.siloShot * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                <span>Silo Shots ({vpConfig.siloShots} × {formatPrice(pricing.unitVP.siloShots)})</span>
+                <span className="font-semibold">{formatPrice(vpConfig.siloShots * pricing.unitVP.siloShots)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Lifestyle Scenes ({vpConfig.lifestyleScenes} × {formatPrice(vpPricing.lifestyleScene)})</span>
-                <span className="font-semibold">{formatPrice(vpConfig.lifestyleScenes * vpPricing.lifestyleScene * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                <span>Lifestyle Scenes ({vpConfig.lifestyleScenes} × {formatPrice(pricing.unitVP.lifestyleScenes)})</span>
+                <span className="font-semibold">{formatPrice(vpConfig.lifestyleScenes * pricing.unitVP.lifestyleScenes)}</span>
               </div>
               {vpConfig.artisticRenders > 0 && (
                 <div className="flex justify-between">
-                  <span>3D Artistic Renders ({vpConfig.artisticRenders} × {formatPrice(vpPricing.artisticRender)})</span>
-                  <span className="font-semibold">{formatPrice(vpConfig.artisticRenders * vpPricing.artisticRender * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                  <span>3D Artistic Renders ({vpConfig.artisticRenders} × {formatPrice(pricing.unitVP.productVideos)})</span>
+                  <span className="font-semibold">{formatPrice(vpConfig.artisticRenders * pricing.unitVP.productVideos)}</span>
                 </div>
               )}
               {vpConfig.resolution !== '1080' && (
                 <div className="flex justify-between">
                   <span>Resolution Upgrade ({vpConfig.resolution})</span>
-                  <span className="font-semibold">{formatPrice(vpPricing.resolutionUpgrade[vpConfig.resolution as keyof typeof vpPricing.resolutionUpgrade] * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                  <span className="font-semibold">{formatPrice(vpPricing.resolutionUpgrade[vpConfig.resolution as keyof typeof vpPricing.resolutionUpgrade])}</span>
                 </div>
               )}
               {vpConfig.retouching !== 'none' && (
                 <div className="flex justify-between">
                   <span>Retouching ({vpConfig.retouching})</span>
-                  <span className="font-semibold">{formatPrice(vpPricing.retouching[vpConfig.retouching as keyof typeof vpPricing.retouching] * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                  <span className="font-semibold">{formatPrice(vpPricing.retouching[vpConfig.retouching as keyof typeof vpPricing.retouching])}</span>
                 </div>
               )}
               {vpConfig.delivery !== 'standard' && (
                 <div className="flex justify-between">
                   <span>Delivery ({vpConfig.delivery})</span>
-                  <span className="font-semibold">{formatPrice(vpPricing.delivery[vpConfig.delivery as keyof typeof vpPricing.delivery] * (billingPeriod === 'annual' ? 1/12 : 1))}</span>
+                  <span className="font-semibold">{formatPrice(vpPricing.delivery[vpConfig.delivery as keyof typeof vpPricing.delivery])}</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between items-center font-bold text-lg">
-                <span>Total Price</span>
-                <span>{formatPrice(calculateVPTotal(billingPeriod === 'payg' ? 'monthly' : billingPeriod))}</span>
+              <div className="flex justify-between font-bold text-lg pt-4 border-t-2 border-blue-600">
+                <span>Total Estimated Cost:</span>
+                <span className="text-blue-600">
+                  {formatPrice(calculateVPTotal())}
+                </span>
               </div>
             </div>
           </div>

@@ -17,12 +17,14 @@ export const pricingData: PricingData = {
     monthly: { 
       starter: 11999, 
       pro: 29999, 
+      enterprise: 0,
       starterPlatform: 0,
       proPlatform: 14999
     },
     payg: { 
       starter: 0, 
       pro: 0,
+      enterprise: 0,
       starterPlatform: 0,
       proPlatform: 0 
     }
@@ -34,5 +36,10 @@ export const pricingData: PricingData = {
     exploded: 2599, 
     animation: 3599, 
     ar: 699
+  },
+  unitVP: {
+    siloShots: 100,
+    lifestyleScenes: 250,
+    productVideos: 1750
   }
 };
