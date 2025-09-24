@@ -1,6 +1,76 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RenderEase Trial – Sign In</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand">
+        <div class="logo">⌂</div>
+        RenderEase
+      </div>
+      <div class="nav-actions">
+        <a class="btn ghost" href="#features">Features</a>
+        <a class="btn ghost" href="#pricing">Pricing</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <section class="hero">
+        <div class="hero-card">
+          <img src="./public/hero.png" alt="RenderEase preview" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 800 500\' style=\'background:%23141422;color:white\'%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'28\' fill=\'%238b8aa3\'%3EPlace your hero.png in /public%3C/text%3E%3C/svg%3E'" />
+        </div>
+        <div class="panel">
+          <h1 id="auth-heading" style="margin:0 0 12px 0">Create your free trial</h1>
+          <p class="muted" style="margin:0 0 18px 0">Whether you have product images or not, we'll get you started in minutes.</p>
+          <form id="auth-form" class="form" novalidate>
+            <div class="field" id="field-name">
+              <label for="name">Full name</label>
+              <input class="input" id="name" name="name" placeholder="Alex Doe" />
+            </div>
+            <div class="field">
+              <label for="email">Work email</label>
+              <input class="input" id="email" name="email" type="email" placeholder="alex@brand.com" required />
+            </div>
+            <div class="field">
+              <label for="company">Company (optional)</label>
+              <input class="input" id="company" name="company" placeholder="Brand Inc." />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
+            </div>
+            <div class="row" style="justify-content: space-between;">
+              <button class="btn" type="submit">Continue</button>
+              <button class="btn secondary" id="mode-switch">Already have an account? Sign in</button>
+            </div>
+            <div id="auth-error" class="muted" style="color:#ff7a7a"></div>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">© 2025, Powered by <strong>RenderEase</strong></footer>
+
+    <script type="module">
+      import { initializeAuthForm } from './js/auth.js';
+      initializeAuthForm();
+    </script>
+  </body>
+  </html>
+
+<!doctype html>
+<html lang="en">
+  <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

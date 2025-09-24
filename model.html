@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RenderEase – 3D Model Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand">
+        <div class="logo">⌂</div>
+        RenderEase
+      </div>
+      <div class="nav-actions">
+        <a href="./dashboard.html" class="btn ghost">Dashboard</a>
+        <div class="avatar" id="avatar">R</div>
+        <button class="btn ghost" id="signout">Sign out</button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <section class="panel">
+        <div class="toolbar">
+          <div class="row">
+            <span class="badge">Demo</span>
+            <strong>Interactive 3D model</strong>
+          </div>
+          <div class="row">
+            <label for="env" class="muted">Environment</label>
+            <select id="env" class="input">
+              <option value="neutral">Neutral</option>
+              <option value="studio">Studio</option>
+              <option value="city">City</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <model-viewer id="viewer" style="width:100%; height:540px; background:#0f0f19; border-radius:12px;"
+          src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+          ar ar-modes="webxr scene-viewer quick-look"
+          camera-controls
+          touch-action="pan-y"
+          shadow-intensity="0.7"
+          exposure="1.0"
+          environment-image="neutral"
+        ></model-viewer>
+      </section>
+    </div>
+
+    <footer class="footer">3D model demo uses `<model-viewer>` with a sample GLB.</footer>
+
+    <script type="module">
+      import { requireSession, attachSignOut } from './js/guard.js';
+      import { setUserAvatarInitial } from './js/ui.js';
+      const session = requireSession();
+      if (session) {
+        setUserAvatarInitial('#avatar', session.name || session.email);
+        attachSignOut('#signout');
+      }
+
+      const viewer = document.querySelector('#viewer');
+      const env = document.querySelector('#env');
+      const map = {
+        neutral: 'neutral',
+        studio: 'https://modelviewer.dev/shared-assets/environments/studio_small_09_2k.hdr',
+        city: 'https://modelviewer.dev/shared-assets/environments/whipple_creek_regional_park_04_2k.hdr'
+      };
+      env.addEventListener('change', () => {
+        viewer.environmentImage = map[env.value] || 'neutral';
+      });
+    </script>
+  </body>
+  </html>
+

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RenderEase Trial – Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand">
+        <div class="logo">⌂</div>
+        RenderEase
+      </div>
+      <div class="nav-actions">
+        <div class="avatar" id="avatar">R</div>
+        <button class="btn ghost" id="signout">Sign out</button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <header style="margin: 6px 0 18px 0;">
+        <h2 style="margin:0">Hey there, let's make your products stand out</h2>
+        <p class="muted" style="margin:8px 0 0 0">Whether starting from scratch or already have images — we'll guide you step by step.</p>
+      </header>
+
+      <section class="hero" style="grid-template-columns: 1fr 1fr;">
+        <div class="hero-card">
+          <img src="./public/hero.png" alt="RenderEase preview" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 800 500\' style=\'background:%23141422;color:white\'%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'28\' fill=\'%238b8aa3\'%3EPlace your hero.png in /public%3C/text%3E%3C/svg%3E'" />
+        </div>
+        <div class="panel">
+          <h3 style="margin-top:0">What would you like to do first?</h3>
+          <div class="grid">
+            <a href="./virtual.html" class="card" style="grid-column: span 6; text-decoration:none; color:inherit;">
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1520975693416-35a34e7ab9b8?q=80&w=800&auto=format&fit=crop" alt="Virtual Photography" /></div>
+              <div class="content"><div class="row"><span class="badge">AI</span><span class="title">Virtual Photography</span></div><span>📷</span></div>
+            </a>
+            <a href="./model.html" class="card" style="grid-column: span 6; text-decoration:none; color:inherit;">
+              <div class="thumb"><img src="https://images.unsplash.com/photo-1616628188502-c0b9b6fda66a?q=80&w=800&auto=format&fit=crop" alt="3D Model" /></div>
+              <div class="content"><div class="row"><span class="badge">AI</span><span class="title">3D Model Generation</span></div><span>🧊</span></div>
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">© 2025, Powered by <strong>RenderEase</strong></footer>
+
+    <script type="module">
+      import { requireSession, attachSignOut } from './js/guard.js';
+      import { setUserAvatarInitial } from './js/ui.js';
+      const session = requireSession();
+      if (session) {
+        setUserAvatarInitial('#avatar', session.name || session.email);
+        attachSignOut('#signout');
+      }
+    </script>
+  </body>
+  </html>
+

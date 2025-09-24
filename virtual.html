@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RenderEase – Virtual Photography</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand">
+        <div class="logo">⌂</div>
+        RenderEase
+      </div>
+      <div class="nav-actions">
+        <a href="./dashboard.html" class="btn ghost">Dashboard</a>
+        <div class="avatar" id="avatar">R</div>
+        <button class="btn ghost" id="signout">Sign out</button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="toolbar panel">
+        <div class="row">
+          <label class="btn secondary" for="productImg">Upload product</label>
+          <input id="productImg" type="file" accept="image/*" style="display:none" />
+          <div class="pill-group" id="backgrounds"></div>
+        </div>
+        <div class="row">
+          <button class="btn" id="download">Download</button>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <section class="panel center" style="padding:0; overflow:hidden;">
+        <canvas id="stage" width="1024" height="640" style="max-width:100%; height:auto; display:block; background:#0f0f19;"></canvas>
+      </section>
+    </div>
+
+    <footer class="footer">Virtual Photography demo — results are illustrative only.</footer>
+
+    <script type="module">
+      import { requireSession, attachSignOut } from './js/guard.js';
+      import { setUserAvatarInitial, downloadCanvas } from './js/ui.js';
+      const session = requireSession();
+      if (session) {
+        setUserAvatarInitial('#avatar', session.name || session.email);
+        attachSignOut('#signout');
+      }
+
+      const presets = [
+        { name: 'Studio Soft', url: 'https://images.unsplash.com/photo-1560347876-aeef00ee58a1?q=80&w=1600&auto=format&fit=crop' },
+        { name: 'Marble', url: 'https://images.unsplash.com/photo-1504805572947-34fad45aed93?q=80&w=1600&auto=format&fit=crop' },
+        { name: 'Pastel', url: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1600&auto=format&fit=crop' },
+        { name: 'Concrete', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop' },
+      ];
+
+      const bgGroup = document.querySelector('#backgrounds');
+      const canvas = document.querySelector('#stage');
+      const ctx = canvas.getContext('2d');
+      const input = document.querySelector('#productImg');
+      const downloadBtn = document.querySelector('#download');
+
+      let selectedBg = 0;
+      let productImage = null;
+
+      presets.forEach((p, i) => {
+        const pill = document.createElement('button');
+        pill.className = 'pill' + (i === 0 ? ' active' : '');
+        pill.textContent = p.name;
+        pill.addEventListener('click', () => {
+          selectedBg = i;
+          for (const el of bgGroup.children) el.classList.remove('active');
+          pill.classList.add('active');
+          render();
+        });
+        bgGroup.appendChild(pill);
+      });
+
+      input.addEventListener('change', async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const img = new Image();
+        img.onload = () => { productImage = img; render(); };
+        img.src = URL.createObjectURL(file);
+      });
+
+      downloadBtn.addEventListener('click', () => downloadCanvas(canvas));
+
+      async function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      let cachedBg = null; let cachedIndex = -1;
+      async function render() {
+        if (cachedIndex !== selectedBg) {
+          cachedBg = await loadImage(presets[selectedBg].url);
+          cachedIndex = selectedBg;
+        }
+        // Background fit cover
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        drawCover(ctx, cachedBg, canvas.width, canvas.height);
+        // Product centered
+        if (productImage) {
+          const maxW = canvas.width * 0.45;
+          const maxH = canvas.height * 0.6;
+          const { dw, dh } = fitContain(productImage.width, productImage.height, maxW, maxH);
+          const x = canvas.width * 0.55 - dw/2;
+          const y = canvas.height * 0.55 - dh/2;
+          ctx.shadowColor = 'rgba(0,0,0,0.35)';
+          ctx.shadowBlur = 24; ctx.shadowOffsetY = 18;
+          ctx.drawImage(productImage, x, y, dw, dh);
+          ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.font = '18px Inter, system-ui, sans-serif';
+          ctx.fillText('Upload a product image to begin', 24, canvas.height - 24);
+        }
+      }
+
+      function drawCover(ctx, img, w, h) {
+        const r = Math.max(w / img.width, h / img.height);
+        const dw = img.width * r;
+        const dh = img.height * r;
+        const dx = (w - dw) / 2; const dy = (h - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+      }
+      function fitContain(sw, sh, maxW, maxH) {
+        const r = Math.min(maxW / sw, maxH / sh);
+        return { dw: sw * r, dh: sh * r };
+      }
+
+      render();
+    </script>
+  </body>
+  </html>
+
